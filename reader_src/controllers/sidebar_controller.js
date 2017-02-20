@@ -2,7 +2,9 @@ EPUBJS.reader.SidebarController = function(book) {
 	var reader = this;
 
 	var $sidebar = $("#sidebar"),
-			$panels = $("#panels");
+			$panels = $("#panels"),
+            $close = $("#close-Sidebar"),
+            $slider = $("#slider");
 
 	var activePanel = "Toc";
 
@@ -14,8 +16,10 @@ EPUBJS.reader.SidebarController = function(book) {
 		reader[controllerName].show();
 		activePanel = viewName;
 
-		$panels.find('.active').removeClass("active");
-		$panels.find("#show-" + viewName ).addClass("active");
+		// $panels.find('.active').removeClass("active");
+		// $panels.find("#show-" + viewName ).addClass("active");
+		$panels.find('.open').removeClass("open");
+		$panels.find("#show-" + viewName ).addClass("open");
 	};
 	
 	var getActivePanel = function() {
@@ -33,6 +37,13 @@ EPUBJS.reader.SidebarController = function(book) {
 		reader.ReaderController.slideIn();
 		$sidebar.removeClass("open");
 	}
+
+    $close.on("click", function () {
+        reader.SidebarController.hide();
+        $slider.addClass("icon-menu");
+        $slider.removeClass("icon-right");
+
+    });
 
 	$panels.find(".show_view").on("click", function(event) {
 		var view = $(this).data("view");

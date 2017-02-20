@@ -8,11 +8,13 @@ EPUBJS.reader.BookmarksController = function() {
 	var docfrag = document.createDocumentFragment();
 	
 	var show = function() {
-		$bookmarks.show();
+		// $bookmarks.show();
+        $bookmarks.addClass('open');
 	};
 
 	var hide = function() {
-		$bookmarks.hide();
+		// $bookmarks.hide();
+        $bookmarks.removeClass('open');
 	};
 	
 	var counter = 0;

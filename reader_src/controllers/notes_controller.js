@@ -11,11 +11,13 @@ EPUBJS.reader.NotesController = function() {
 	var epubcfi = new EPUBJS.EpubCFI();
 
 	var show = function() {
-		$notesView.show();
+		// $notesView.show();
+        $notesView.addClass('open');
 	};
 
 	var hide = function() {
-		$notesView.hide();
+		// $notesView.hide();
+        $notesView.removeClass('open');
 	}
 	
 	var insertAtPoint = function(e) {
