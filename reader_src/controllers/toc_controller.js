@@ -46,12 +46,10 @@ EPUBJS.reader.TocController = function(toc) {
 	};
 
 	var onShow = function() {
-		// $list.show();
         $list.addClass('open');
 	};
 
 	var onHide = function() {
-		// $list.hide();
         $list.removeClass('open');
 	};
 

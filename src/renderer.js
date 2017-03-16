@@ -1179,8 +1179,10 @@ EPUBJS.Renderer.prototype.resize = function(width, height, setSize){
 EPUBJS.Renderer.prototype.onResized = function(e) {
 	this.trigger('renderer:beforeResize');
 	
-	var width = this.container.clientWidth;
-	var height = this.container.clientHeight;
+	//var width = this.container.clientWidth;
+	//var height = this.container.clientHeight;
+    var width = parseInt(window.getComputedStyle(document.getElementById('viewer')).width),
+        height = parseInt(window.getComputedStyle(document.getElementById('viewer')).height);
 
 	this.resize(width, height, false);
 };

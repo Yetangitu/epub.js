@@ -1,66 +1,52 @@
 EPUBJS.reader.BookmarksController = function() {
-	var reader = this;
-	var book = this.book;
+
+	var reader = this,
+	    book = this.book,
+        annotations = reader.settings.annotations;
 
 	var $bookmarks = $("#bookmarksView"),
-			$list = $bookmarks.find("#bookmarks");
-	
-	var docfrag = document.createDocumentFragment();
+        $list = $bookmarks.find("#bookmarks"),
+        $bookmark = $("#bookmark");
 	
 	var show = function() {
-		// $bookmarks.show();
         $bookmarks.addClass('open');
 	};
 
 	var hide = function() {
-		// $bookmarks.hide();
         $bookmarks.removeClass('open');
 	};
-	
-	var counter = 0;
-	
-	var createBookmarkItem = function(cfi) {
-		var listitem = document.createElement("li"),
-				link = document.createElement("a");
-		
-		listitem.id = "bookmark-"+counter;
-		listitem.classList.add('list_item');
-		
-		//-- TODO: Parse Cfi
-		link.textContent = cfi;
-		link.href = cfi;
 
-		link.classList.add('bookmark_link');
-		
-		link.addEventListener("click", function(event){
-				var cfi = this.getAttribute('href');
-				book.gotoCfi(cfi);
-				event.preventDefault();
-		}, false);
-		
-		listitem.appendChild(link);
-		
-		counter++;
-		
-		return listitem;
+    var addBookmarkItem = function (bookmark) {
+        $list.append(reader.NotesController.createItem(bookmark));
+    };
+
+    for (var bookmark in annotations) {
+        if (annotations.hasOwnProperty(bookmark) && (annotations[bookmark].type === "bookmark"))
+            addBookmarkItem(annotations[bookmark]);
 	};
+	
+	this.on("reader:bookmarkcreated", function (bookmark) {
+        addBookmarkItem(bookmark);
+	});
+	
+	this.on("reader:bookmarkremoved", function (id) {
+		var $item = $("#"+id),
+            cfi = reader.book.getCurrentLocationCfi(),
+            cfi_id = reader.cfiToId(cfi);
 
-	this.settings.bookmarks.forEach(function(cfi) { 
-		var bookmark = createBookmarkItem(cfi);
-		docfrag.appendChild(bookmark);
-	});
-	
-	$list.append(docfrag);
-	
-	this.on("reader:bookmarked", function(cfi) {
-		var item = createBookmarkItem(cfi);
-		$list.append(item);
-	});
-	
-	this.on("reader:unbookmarked", function(index) {
-		var $item = $("#bookmark-"+index);
 		$item.remove();
+
+        if(cfi_id === id) {
+            $bookmark
+                .removeClass("icon-turned_in")
+                .addClass("icon-turned_in_not");
+        }
 	});
+
+    this.on("reader:gotobookmark", function (bookmark) {
+        if (bookmark && bookmark.value)
+            book.gotoCfi(bookmark.value);
+    });
 
 	return {
 		"show" : show,

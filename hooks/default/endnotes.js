@@ -4,23 +4,23 @@ EPUBJS.Hooks.register("beforeChapterDisplay").endnotes = function(callback, rend
 			items = Array.prototype.slice.call(notes), //[].slice.call()
 			attr = "epub:type",
 			type = "noteref",
-			folder = EPUBJS.core.folder(location.pathname),
-			cssPath = (folder + EPUBJS.cssPath) || folder,
+            base = parent.location.origin + parent.location.pathname,
+			cssPath = (EPUBJS.basePath + EPUBJS.cssPath) || folder,
 			popups = {};
 
-		EPUBJS.core.addCss(EPUBJS.cssPath + "popup.css", false, renderer.render.document.head);
+		EPUBJS.core.addCss(cssPath + "popup.css", false, renderer.render.document.head);
 
 
 		items.forEach(function(item){
 			var epubType = item.getAttribute(attr),
 				href,
-				id,
+				oid,
 				el,
 				pop,
 				pos,
 				left,
 				top,
-				txt;
+                txt;
 
 			if(epubType != type) return;
 

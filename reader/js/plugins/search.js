@@ -1,125 +1,136 @@
-EPUBJS.reader.search = {};
+EPUBJS.reader.plugins.SearchController = function () {
+    var reader = this;
+    var book = this.book;
 
-// Search Server -- https://github.com/futurepress/epubjs-search
-EPUBJS.reader.search.SERVER = "https://pacific-cliffs-3579.herokuapp.com";
+    var $searchBox = $("#searchBox"),
+		$clearBtn = $("#searchBox").next(),
+        $searchResults = $("#searchResults"),
+        $searchView = $("#searchView"),
+        $body = $("#viewer iframe").contents().find('body');
+        results = document.getElementById('searchResults');
 
-EPUBJS.reader.search.request = function(q, callback) {
-	var fetch = $.ajax({
-		dataType: "json",
-		url: EPUBJS.reader.search.SERVER + "/search?q=" + encodeURIComponent(q) 
+    var onShow = function() {
+        $searchView.addClass("open");
+        //search();
+    };
+
+    var onHide = function() {
+        $body.unhighlight();
+        $searchView.removeClass("open");
+    };
+
+    var search = function(q) {
+        if (q === undefined) {
+            q = $searchBox.val();
+        }
+
+        if (q == '') {
+            clear();
+            return;
+        }
+
+        reader.SidebarController.changePanelTo("Search");
+
+        $searchResults.empty();
+        $searchResults.append("<li><p>Searching...</p></li>");
+
+        runQuery(q, results);
+
+    };
+
+	$searchBox.on("keyup", function(e) {
+		// Show the clear button if text input value is not empty
+		$clearBtn.css("visibility", (this.value.length) ? "visible" : "hidden");
+
+        // run search when Enter is pressed
+        if (e.keyCode === 13) {
+            search();
+        }
+
+        e.preventDefault();
 	});
 
-	fetch.fail(function(err) {
-		console.error(err);
+	$clearBtn.on("click", function() {
+		$(this).css("visibility", "hidden");
+		$searchBox.val("");
 	});
 
-	fetch.done(function(results) {
-		callback(results);
-	});
-};
+    function clear () {
 
-EPUBJS.reader.plugins.SearchController = function(Book) {
-	var reader = this;
-	
-	var $searchBox = $("#searchBox"),
-			$searchResults = $("#searchResults"),
-			$searchView = $("#searchView"),
-			iframeDoc;
-	
-	var searchShown = false;
-	
-	var onShow = function() {
-		query();
-		searchShown = true;
-		$searchView.addClass("shown");
-	};
-	
-	var onHide = function() {
-		searchShown = false;
-		$searchView.removeClass("shown");
-	};
-	
-	var query = function() {
-		var q = $searchBox.val();
-		
-		if(q == '') {
-			return;
-		}
-		
-		$searchResults.empty();
-		$searchResults.append("<li><p>Searching...</p></li>");
-		
-		
-		
-		EPUBJS.reader.search.request(q, function(data) {
-			var results = data.results;
-			
-			$searchResults.empty();
-			
-			if(iframeDoc) { 
-				$(iframeDoc).find('body').unhighlight();
-			}
-			
-			if(results.length == 0) {
-				$searchResults.append("<li><p>No Results Found</p></li>");
-				return;
-			}
-			
-			iframeDoc = $("#viewer iframe")[0].contentDocument;
-			$(iframeDoc).find('body').highlight(q, { element: 'span' });
-			
-			results.forEach(function(result) {
-				var $li = $("<li></li>");
-				var $item = $("<a href='"+result.href+"' data-cfi='"+result.cfi+"'><span>"+result.title+"</span><p>"+result.highlight+"</p></a>");
-	
-				$item.on("click", function(e) {
-					var $this = $(this),
-							cfi = $this.data("cfi");
-					
-					e.preventDefault();
-					
-					Book.gotoCfi(cfi+"/1:0");
-					
-					Book.on("renderer:chapterDisplayed", function() {
-						iframeDoc = $("#viewer iframe")[0].contentDocument;
-						$(iframeDoc).find('body').highlight(q, { element: 'span' });
-					})
-					
-					
-					
-				});
-				$li.append($item);
-				$searchResults.append($li);
-			});
-	
-		});
-	
-	};
-	
-	$searchBox.on("search", function(e) {
-		var q = $searchBox.val();
-		
-		//-- SearchBox is empty or cleared
-		if(q == '') {
-			$searchResults.empty();
-			if(reader.SidebarController.getActivePanel() == "Search") {
-				reader.SidebarController.changePanelTo("Toc");
-			}
-			
-			$(iframeDoc).find('body').unhighlight();
-			iframeDoc = false;
-			return;
-		}
-		
-		reader.SidebarController.changePanelTo("Search");
-		
-		e.preventDefault();
-	});
-	
-	
-	
-	return {
-		"show" : onShow,
-		"hide" : onHide
-	};
+        $searchResults.empty();
+        // book.off("renderer:chapterDisplayed");
+        $body.unhighlight();
+
+        if (reader.SidebarController.getActivePanel() == "Search") {
+            reader.SidebarController.changePanelTo("Toc");
+        }
+    };
+
+    // perform search and build result list
+    function runQuery(query, element) {
+
+        return new Promise(function(resolve, reject) {
+
+            var results = [];
+
+            for (var i = 0; i < book.spine.length; i++) {
+                var spineItem = book.spine[i];
+                results.push(new Promise(function(resolve, reject) {
+                    new Promise(function(resolve, reject) {
+                        resolve(new EPUBJS.Chapter(spineItem, book.store, book.credentials));
+                    }).then(function(chapter) {
+                        return new Promise(function(resolve, reject) {
+                            chapter.load().then(function() {
+                                resolve(chapter);
+                            }).catch(reject);
+                        });
+                    }).then(function(chapter) {
+                        return Promise.resolve(chapter.find(query));
+                    }).then(function(result) {
+                        resolve(result);
+                    });
+                }));
+            }
+            Promise.all(results).then(function(results) {
+                return new Promise(function(resolve, reject) {
+                    resolve(results);
+                    var mergedResults = [].concat.apply([], results);
+                    element.innerHTML = "";
+                    for (var i = 0; i < mergedResults.length; i++) {
+                        try {
+                            var listitem = document.createElement("li");
+                            var link = document.createElement("a");
+                            listitem.classList.add("list_item");
+                            listitem.id = "search-" + i;
+                            link.href=mergedResults[i].cfi;
+                            link.textContent = mergedResults[i].excerpt;
+                            link.classList.add("toc_link");
+                            link.addEventListener("click", function(e) {
+                                body.highlight(query, { element: 'span' });
+                                book.on("renderer:chapterDisplayed", function() {
+                                    body.highlight(query, { element: 'span' });
+                                });
+
+                                $searchResults.find(".list_item").removeClass("currentChapter");
+                                $(this).parent("li").addClass("currentChapter");
+
+                                book.gotoCfi(this.getAttribute("href"));
+                                e.preventDefault();
+                            });
+                            listitem.appendChild(link);
+                            element.appendChild(listitem);
+                        } catch (e) {
+                            console.warn(e);
+                        }
+                    }
+                });
+            });
+        });
+    };
+
+    return {
+        "show": onShow,
+        "hide": onHide,
+        "search": search
+    };
 };

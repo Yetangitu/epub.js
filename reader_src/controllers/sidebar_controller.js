@@ -1,61 +1,73 @@
 EPUBJS.reader.SidebarController = function(book) {
-	var reader = this;
+    var reader = this,
+        settings = reader.settings;
 
-	var $sidebar = $("#sidebar"),
-			$panels = $("#panels"),
-            $close = $("#close-Sidebar"),
-            $slider = $("#slider");
+    var $sidebar = $("#sidebar"),
+        $panels = $("#panels"),
+        $views = $("#views"),
+        $close = $("#hide-Sidebar");
+    $slider = $("#slider");
 
-	var activePanel = "Toc";
+    var activePanel = "Toc";
 
-	var changePanelTo = function(viewName) {
-		var controllerName = viewName + "Controller";
-		
-		if(activePanel == viewName || typeof reader[controllerName] === 'undefined' ) return;
-		reader[activePanel+ "Controller"].hide();
-		reader[controllerName].show();
-		activePanel = viewName;
+    var changePanelTo = function(viewName) {
+        var controllerName = viewName + "Controller";
 
-		// $panels.find('.active').removeClass("active");
-		// $panels.find("#show-" + viewName ).addClass("active");
-		$panels.find('.open').removeClass("open");
-		$panels.find("#show-" + viewName ).addClass("open");
-	};
-	
-	var getActivePanel = function() {
-		return activePanel;
-	};
-	
-	var show = function() {
-		reader.sidebarOpen = true;
-		reader.ReaderController.slideOut();
-		$sidebar.addClass("open");
-	}
+        if (!(activePanel == viewName || typeof reader[controllerName] === 'undefined' )) {
+            reader[activePanel+ "Controller"].hide();
+            reader[controllerName].show();
+            activePanel = viewName;
 
-	var hide = function() {
-		reader.sidebarOpen = false;
-		reader.ReaderController.slideIn();
-		$sidebar.removeClass("open");
-	}
+            //$panels.find('.open').removeClass("open");
+            $sidebar.find('.open').removeClass("open");
+            $panels.find("#show-" + viewName ).addClass("open");
+            $views.find("#" + viewName.toLowerCase() + "View").addClass("open");
+        }
+        show();
+    };
+
+    var getActivePanel = function() {
+        return activePanel;
+    };
+
+    var show = function() {
+        reader.sidebarOpen = true;
+        if (settings.sidebarReflow) reader.ReaderController.slideOut();
+        $slider.hide();
+        $sidebar.addClass("open");
+    }
+
+    var hide = function() {
+        reader.sidebarOpen = false;
+        $slider.show();
+        reader.ReaderController.slideIn();
+        $sidebar.removeClass("open");
+        reader.SearchController.unhighlight();
+    };
+
+    var toggle = function () {
+        (reader.sidebarOpen) ? hide() : show();
+    };
 
     $close.on("click", function () {
         reader.SidebarController.hide();
-        $slider.addClass("icon-menu");
-        $slider.removeClass("icon-right");
+        // $slider.addClass("icon-menu");
+        // $slider.removeClass("icon-right");
 
     });
 
-	$panels.find(".show_view").on("click", function(event) {
-		var view = $(this).data("view");
+    $panels.find(".show_view").on("click", function(e) {
+        var view = $(this).data("view");
 
-		changePanelTo(view);
-		event.preventDefault();
-	});
+        changePanelTo(view);
+        e.preventDefault();
+    });
 
-	return {
-		'show' : show,
-		'hide' : hide,
-		'getActivePanel' : getActivePanel,
-		'changePanelTo' : changePanelTo
-	};
+    return {
+        'show' : show,
+        'hide' : hide,
+        'toggle' : toggle,
+        'getActivePanel' : getActivePanel,
+        'changePanelTo' : changePanelTo
+    };
 };

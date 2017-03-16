@@ -1,145 +1,176 @@
 EPUBJS.reader.ReaderController = function(book) {
-	var $main = $("#main"),
-			$divider = $("#divider"),
-			$loader = $("#loader"),
-			$next = $("#next"),
-			$prev = $("#prev");
-	var reader = this;
-	var book = this.book;
-	var slideIn = function() {
-		var currentPosition = book.getCurrentLocationCfi();
-		if (reader.settings.sidebarReflow){
-			$main.removeClass('single');
-			$main.one("transitionend", function(){
-				book.gotoCfi(currentPosition);
-			});
-		} else {
-			$main.removeClass("closed");
-		}
-	};
+    var $main = $("#main"),
+        $divider = $("#divider"),
+        $loader = $("#loader"),
+        $next = $("#next"),
+        $prev = $("#prev"),
+        $sidebarReflow = $('#sidebarReflow'),
+        $metainfo = $("#metainfo"),
+        $use_custom_colors = $("#use_custom_colors"),
+        $container = $("#container"),
+        $fullscreen = $("#fullscreen"),
+        $bookmark = $("#bookmark"),
+        $note = $("#note");
 
-	var slideOut = function() {
-		var currentPosition = book.getCurrentLocationCfi();
-		if (reader.settings.sidebarReflow){
-			$main.addClass('single');
-			$main.one("transitionend", function(){
-				book.gotoCfi(currentPosition);
-			});
-		} else {
-			$main.addClass("closed");
-		}
-	};
+    var reader = this,
+        book = this.book,
+        settings = reader.settings;
 
-	var showLoader = function() {
-		$loader.show();
-		hideDivider();
-	};
+    var slideIn = function() {
+        if (reader.viewerResized) {
+            var currentPosition = book.getCurrentLocationCfi();
+            reader.viewerResized = false;
+            $main.removeClass('single');
+            $main.one("transitionend", function(){
+                book.gotoCfi(currentPosition);
+            });
+        }
+    };
 
-	var hideLoader = function() {
-		$loader.hide();
-		
-		//-- If the book is using spreads, show the divider
-		// if(book.settings.spreads) {
-		// 	showDivider();
-		// }
-	};
+    var slideOut = function() {
+        var currentPosition = book.getCurrentLocationCfi();
+        reader.viewerResized = true;
+        $main.addClass('single');
+        $main.one("transitionend", function(){
+            book.gotoCfi(currentPosition);
+        });
+    };
 
-	var showDivider = function() {
-		$divider.addClass("show");
-	};
+    var showLoader = function() {
+        $loader.show();
+        hideDivider();
+    };
 
-	var hideDivider = function() {
-		$divider.removeClass("show");
-	};
+    var hideLoader = function() {
+        $loader.hide();
 
-	var keylock = false;
+        //-- If the book is using spreads, show the divider
+        // if(book.settings.spreads) {
+            // 	showDivider();
+            // }
+    };
 
-	var arrowKeys = function(e) {		
-		if(e.keyCode == 37) { 
-			
-			if(book.metadata.direction === "rtl") {
-				book.nextPage();
-			} else {
-				book.prevPage();
-			}
+    var showDivider = function() {
+        $divider.addClass("show");
+    };
 
-			$prev.addClass("active");
+    var hideDivider = function() {
+        $divider.removeClass("show");
+    };
 
-			keylock = true;
-			setTimeout(function(){
-				keylock = false;
-				$prev.removeClass("active");
-			}, 100);
+    var keylock = false;
 
-			 e.preventDefault();
-		}
-		if(e.keyCode == 39) {
+    var showActive = function (obj) {
+        keylock = true;
+        obj.addClass("active");	
+        setTimeout(function () {
+            keylock = false;
+            obj.removeClass("active");
+        }, 100);
+    };
 
-			if(book.metadata.direction === "rtl") {
-				book.prevPage();
-			} else {
-				book.nextPage();
-			}
-			
-			$next.addClass("active");
+    var keyCommands = function(e) {
 
-			keylock = true;
-			setTimeout(function(){
-				keylock = false;
-				$next.removeClass("active");
-			}, 100);
+        var page_no = false;
 
-			 e.preventDefault();
-		}
-	}
+        switch (settings.keyboard[e.keyCode]) {
+            case 'previous':
+                $prev.click();
+                break;
+            case 'next':
+                $next.click();
+                break;
+            case 'first':
+                page_no = 1;
+                break;
+            case 'last':
+                // TODO
+                break;
+            case 'annotate':
+                $note.click();
+                break;
+            case 'bookmark':
+                $bookmark.click();
+                break;
+            case 'reflow':
+                $sidebarReflow.click();
+                break;
+            case 'toggleSidebar':
+                reader.SidebarController.toggle();
+                break;
+            case 'closeSidebar':
+                reader.SidebarController.hide();
+                break;
+            case 'toggleFullscreen':
+                $fullscreen.click();
+                break;
+            case 'toggleNight':
+                $metainfo.click();
+                break;
+            case 'toggleDay':
+                $use_custom_colors.click();
+                break;
+            default:
+                console.log("unsupported keyCode: " + e.keyCode);
+        }
 
-	document.addEventListener('keydown', arrowKeys, false);
+        if (page_no) {
 
-	$next.on("click", function(e){
-		
-		if(book.metadata.direction === "rtl") {
-			book.prevPage();
-		} else {
-			book.nextPage();
-		}
+            // TODO
+        }
+    }
 
-		e.preventDefault();
-	});
+    document.addEventListener('keydown', keyCommands, false);
 
-	$prev.on("click", function(e){
-		
-		if(book.metadata.direction === "rtl") {
-			book.nextPage();
-		} else {
-			book.prevPage();
-		}
+    $next.on("click", function(e){
 
-		e.preventDefault();
-	});
-	
-	book.on("renderer:spreads", function(bool){
-		if(bool) {
-			showDivider();
-		} else {
-			hideDivider();
-		}
-	});
+        if(book.metadata.direction === "rtl") {
+            book.prevPage();
+        } else {
+            book.nextPage();
+        }
 
-	// book.on("book:atStart", function(){
-	// 	$prev.addClass("disabled");
-	// });
-	// 
-	// book.on("book:atEnd", function(){
-	// 	$next.addClass("disabled");	
-	// });
+        showActive($next);
 
-	return {
-		"slideOut" : slideOut,
-		"slideIn"  : slideIn,
-		"showLoader" : showLoader,
-		"hideLoader" : hideLoader,
-		"showDivider" : showDivider,
-		"hideDivider" : hideDivider,
-		"arrowKeys" : arrowKeys
-	};
+        e.preventDefault();
+    });
+
+    $prev.on("click", function(e){
+
+        if(book.metadata.direction === "rtl") {
+            book.nextPage();
+        } else {
+            book.prevPage();
+        }
+
+        showActive($prev);
+
+        e.preventDefault();
+    });
+
+    book.on("renderer:spreads", function(bool){
+        if(bool) {
+            showDivider();
+        } else {
+            hideDivider();
+        }
+    });
+
+    // book.on("book:atStart", function(){
+        // 	$prev.addClass("disabled");
+        // });
+    // 
+    // book.on("book:atEnd", function(){
+        // 	$next.addClass("disabled");	
+        // });
+
+    return {
+        "slideOut" : slideOut,
+        "slideIn"  : slideIn,
+        "showLoader" : showLoader,
+        "hideLoader" : hideLoader,
+        "showDivider" : showDivider,
+        "hideDivider" : hideDivider,
+        "keyCommands" : keyCommands
+    };
 };

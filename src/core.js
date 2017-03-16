@@ -608,6 +608,53 @@ EPUBJS.core.isArray = Array.isArray || function(obj) {
   return Object.prototype.toString.call(obj) === '[object Array]';
 };
 
+
+// https://github.com/mvhenten/ellipsize/blob/master/index.js
+EPUBJS.core.ellipsize = function(str, max, opts) {
+	var defaults = {
+            ellipse: '…',
+            chars: [' ', '-'],
+            max: 140,
+            truncate: true
+	};
+
+    if (typeof str !== 'string' || str.length === 0) return '';
+    if (max === 0) return '';
+
+    opts = opts || {};
+
+    for (var key in defaults) {
+        if (opts[key] === null || typeof opts[key] === 'undefined') {
+            opts[key] = defaults[key];
+        }
+    }
+
+    opts.max = max || opts.max;
+
+	var last = 0,
+		c = '';
+
+	if (str.length < opts.max) return str;
+
+	for (var i = 0, len = str.length; i < len; i++) {
+		c = str.charAt(i);
+
+		if (opts.chars.indexOf(c) !== -1) {
+			last = i;
+		}
+
+		if (i < opts.max) continue;
+		if (last === 0) {
+			return !opts.truncate ? '' : str.substring(0, opts.max - 1) + opts.ellipse;
+		}
+
+		return str.substring(0, last) + opts.ellipse;
+	}
+
+	return str;
+};
+
+
 // Lodash
 EPUBJS.core.values = function(object) {
 	var index = -1;
