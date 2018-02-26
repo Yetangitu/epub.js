@@ -268,7 +268,6 @@ EPUBJS.Reader.prototype.addStyleSheet = function (_id, _parentNode) {
         parentNode = _parentNode || document.head,
         style = document.createElement("style");
 
-    console
     // WebKit hack
     style.appendChild(document.createTextNode(""));
     style.setAttribute("id", id);
@@ -342,6 +341,8 @@ EPUBJS.Reader.prototype.disableStyle = function (style) {
 EPUBJS.Reader.prototype.updateStyle = function (style) {
 
     var current = this.getStyleSheet(style.name, renderer.doc.head);
+
+    this.settings.session.setDefault("customStyles",this.settings.customStyles);
 
     if (current) this.enableStyle(style);
 };

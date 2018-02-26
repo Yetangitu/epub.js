@@ -104,6 +104,10 @@ EPUBJS.reader.StylesController = function (renderer) {
                 $custom_font_size.prop("checked", true);
                 $font_size.prop('disabled',false);
                 break;
+            case "fontWeight":
+                $custom_font_weight.prop("checked", true);
+                $font_weight.prop('disabled',false);
+                break;
             case "maximizePage":
                 $maximize_page.prop("checked", true);
                 break;
